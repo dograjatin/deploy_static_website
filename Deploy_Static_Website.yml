@@ -1,0 +1,54 @@
+-
+  name: Deploy #StaticWebSite to Remote Server
+  hosts: # Add hosts as per the Inventory
+  vars:
+    src_files_path: # Full Path of Directory where all files are downloaded
+    dest_path: /var/www/html
+  tasks:
+    - 
+      name: Installing Apache Server and Git on Target Servers
+      yum: 
+        name: "{{ item }}"
+        state: present 
+      loop:
+        - git To make sure Git is intalled on server at first
+        - httpd
+    - 
+      name: Loading Calculator App from Git Repo
+      ansible.builtin.git:
+        repo: 'https://github.com/dograjatin/Simple_Calculator.git'
+        dest: "{{ src_files_path }}"
+        clone: yes
+    - 
+      name: Starting Apache Server on Target Servers
+      service: 
+        name: httpd
+        state: started 
+        
+    - 
+      name: Transferring Calc App to Apache Server
+      shell: cp -r "{{ src_files_path }}"/* "{{ dest_path }}"
+      become: yes
+      
+    - 
+      name: Checking Apache Server File Permissions
+      ansible.builtin.file:
+        path: "{{ dest_path }}"
+        recurse: yes
+        mode: 0777
+    - 
+      name: Configuring Firewall for HTTP Service
+      ansible.posix.firewalld:
+        service: http
+        permanent: yes
+        state: enabled
+    - 
+      name: Reloading Firewall and Apache Server
+      service: 
+        name: "{{ item }}"
+        state: reloaded 
+      loop:
+        - firewalld
+        - httpd
+      
+        
